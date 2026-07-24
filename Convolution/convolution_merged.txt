@@ -1,0 +1,1407 @@
+CSE220 Signals and Linear Systems
+Offline on Convolution
+Building and Applying a Discrete-Time LTI System
+1. Introduction
+In this offline, you will implement reusable classes for finite discrete-time signals and
+discrete-time linear time-invariant (LTI) systems. An LTI system is completely character
+ized by its impulse response h[n], and its output for an input x[n] is
+∞
+y[n] =
+k=−∞
+x[k]h[n − k].
+You will compute this output in two equivalent ways:
+1. Superposition of responses: form the component responses x[k]h[n − k] and add
+them.
+2. Sliding multiply-and-add: compute each output value directly from the convolu
+tion sum.
+The two results must be verified to be identical. The same implementation will then
+process input files containing either a custom impulse response or all built-in impulse
+responses supplied in the template code.
+Part I: Implementation
+2. Class DiscreteSignal
+The DiscreteSignal class represents a finite discrete-time signal over the inclusive integer
+range
+nmin ≤ n ≤ nmax.
+Values outside the stored range are treated as zero whenever a signal value is requested.
+Constructor
+DiscreteSignal(start_time, end_time)
+Creates a zero-valued signal over the inclusive range from start_time to end_time.
+Required Methods
+get_value_at_time(t) Returns the signal value at time t; returns zero when t is outside
+the stored range.
+1
+set_value_at_time(t, value) Sets the value at time t. The index must lie within the
+stored range.
+shift(k) Returns a new signal representing x[n − k]. Positive k shifts the signal to the
+right, and negative k shifts it to the left.
+add(other) Returns the sum of two signals, correctly handling different time ranges.
+multiply(scalar) Returns a new signal representing a scalar multiple of the original
+signal.
+plot(title, save_path=None) Produces a stem plot over the signal’s stored range and
+saves it when a path is provided.
+The class must store the signal’s start time, end time, and values. The exact internal
+representation and any additional helper methods are your choice.
+3. Class LTISystem
+The LTISystem class represents a discrete-time LTI system using an arbitrary finite
+impulse response h[n].
+Constructor
+LTISystem(impulse_response)
+Initializes the system using a DiscreteSignal representing h[n].
+Output Range
+If x[n] is stored over [nx,min,nx,max] and h[n] is stored over [nh,min,nh,max], the complete
+output must use the range
+nx,min + nh,min ≤ n ≤ nx,max +nh,max.
+This range must be determined automatically.
+Required Methods
+get_response_components(input_signal) Returns the nonzero component responses
+x[k]h[n − k] associated with the input samples.
+output_by_superposition(input_signal) Computes the complete output by adding
+all component responses returned by get_response_components.
+get_contributions_at_time(input_signal, n) Returns the nonzero terms x[k]h[n−
+k] that contribute to the selected output value y[n].
+output_at_time(input_signal, n) Returns the scalar output value y[n] using the
+convolution sum.
+2
+output(input_signal) Computes the complete output by evaluating the convolution
+sum separately at every output index.
+The two complete-output methods must be independent: output_by_superposition
+must use component-response superposition, while output must use the sliding multiply
+and-add calculation.
+Part II: Verification
+4. Required Verification for Every Impulse Response
+For every custom or built-in impulse response, main.py must compute
+y_superposition = system.output_by_superposition(input_signal)
+y_convolution = system.output(input_signal)
+Compare the two outputs over their full range and calculate
+max
+n 
+|ysup[n] − yconv[n]|.
+The maximum difference must be zero up to normal floating-point tolerance. Built-in
+convolution or correlation functions must not be used for either output.
+For every processed impulse response, report.txt must include the input values, impulse
+response values, output values, output range, maximum absolute difference, and paths of
+the saved figures. A built-in run must contain a separate report section for every built-in
+impulse response.
+Part III: File-Based Convolution Application
+5. Input Files
+main.py must read the problem from a text file supplied through the command line. The
+submission must include four examples:
+• inputs/1.txt: small signal with a custom impulse response;
+• inputs/2.txt: the same small signal with built-in;
+• inputs/3.txt: long signal with a custom impulse response;
+• inputs/4.txt: the same long signal with built-in.
+Input Signal
+The first two lines contain the input time range and values:
+input_start input_end
+x[input_start] x[input_start+1] ... x[input_end]
+The number of values must equal input_end- input_start + 1. The signal must not
+be assumed to start at zero.
+3
+Impulse-Response Mode
+Line 3 contains either
+custom
+or
+built-in
+The spelling builtin may also be accepted.
+For custom, lines 4–5 contain the impulse-response range and values:
+impulse_start impulse_end
+h[impulse_start] h[impulse_start+1] ... h[impulse_end]
+For built-in, the program must apply all six impulse responses supplied in the template
+code, in the given order:
+1. identity:
+2. 3-point moving average:
+3. 5-point moving average:
+4. 7-point moving average:
+h[0] = 1
+h[0] = h[1] = h[2] = 1
+3
+h[0] = h[1] = h[2] = h[3] = h[4] = 1
+5
+h[0] = h[1] = h[2] = h[3] = h[4] = h[5] = h[6] = 1
+7
+5. weighted smoothing:
+6. first difference:
+h[0] = 0.5,
+h[1] = 0.3,
+h[0] = 1,
+h[2] = 0.2
+h[1] = −1
+Do not change their definitions, names, or order. Each built-in system must be represented
+as an ordinary DiscreteSignal and processed through LTISystem.
+Sample Custom Input-2 3
+1 0 2-1 0 3
+custom-1 2
+1 2 0-1
+4
+Sample Built-In Input-2 3
+1 0 2-1 0 3
+built-in
+6. Required Visualizations
+Every processed impulse response must produce both of the following:
+1. a stem-plot figure containing x[n], h[n], and y[n];
+2. a grayscale color-block figure containing only x[n] and y[n].
+For the color-block figure, normalize each displayed signal separately to the range 0–255
+and show it as one horizontal row of adjacent grayscale blocks. Keep the horizontal-axis
+labels readable for long signals.
+7. Running the Program and Saving Results
+The project root must contain cmd.txt, listing the exact commands used for the four
+provided input files. For example:
+python3 main.py inputs/1.txt--out-dir outputs/1
+python3 main.py inputs/2.txt--out-dir outputs/2
+python3 main.py inputs/3.txt--out-dir outputs/3
+python3 main.py inputs/4.txt--out-dir outputs/4
+main.py must accept the argument--out-dir <directory>
+and create the selected directory when necessary. Each output directory must have the
+form
+<out-dir>/
+|-- report.txt
+|-- plot/
+‘-- color/
+For a custom input, save
+plot/convolution.png
+color/convolution.png
+For a built-in input, save one stem plot and one color plot for every built-in impulse
+response using these filenames:
+plot/builtin_1_identity.png
+color/builtin_1_identity.png
+plot/builtin_2_moving_average_3.png
+color/builtin_2_moving_average_3.png
+5
+plot/builtin_3_moving_average_5.png
+color/builtin_3_moving_average_5.png
+plot/builtin_4_moving_average_7.png
+color/builtin_4_moving_average_7.png
+plot/builtin_5_weighted_smoothing.png
+color/builtin_5_weighted_smoothing.png
+plot/builtin_6_first_difference.png
+color/builtin_6_first_difference.png
+Existing files in the selected output directory may be overwritten.
+8. Required Program Structure
+signal_lti.py
+Contains the complete DiscreteSignal and LTISystem classes. It must not contain
+input-file-specific or filter-specific processing logic.
+main.py
+Reads the command-line arguments and input file, processes custom or built-in impulse
+responses, performs verification, generates the report and figures, and saves all results in
+def main():
+the selected output directory.
+Use the standard structure:
+# Required tasks
+pass
+if __name__ == "__main__":
+main()
+The class implementations must not be duplicated inside main.py.
+9. Restrictions and General Requirements
+• Donot use built-in convolution or correlation operations, including numpy.convolve,
+scipy.signal.convolve, scipy.signal.fftconvolve, or similar functions.
+• You may use NumPy for ordinary numerical operations, Matplotlib for plotting, and
+the Python standard library.
+• Correctly handle negative indices, different signal ranges, asymmetric impulse re
+sponses, and automatically determined output ranges.
+• Signal operations must return new objects where appropriate and must not rely on
+hardcoded signal lengths or output values.
+• The class code must remain general and reusable; built-in-filter-specific logic belongs
+6
+outside the two classes.
+10. Mark Distribution
+Component
+Marks
+DiscreteSignal representation, indexing, and constructor
+Signal shifting
+Signal addition and scalar multiplication
+Signal plotting and time-range handling
+DiscreteSignal Total
+8
+6
+7
+4
+25
+Response-component generation
+Output by superposition
+Contributions and output at one time
+Complete convolution-sum output and output range
+LTISystem Total
+12
+10
+10
+13
+45
+Verification, report, and generated visualizations
+File reading and custom/built-in processing
+Stem and color visualizations
+Code organization, readability, and documentation
+10
+9
+6
+5
+Total
+100
+11. Submission
+Create and zip a folder named with your student ID:
+<student_id>/
+|-- inputs/
+| |-- 1.txt
+| |-- 2.txt
+| |-- 3.txt
+| ‘-- 4.txt
+|-- cmd.txt
+|-- signal_lti.py
+‘-- main.py
+Submit it as <student_id>.zip. Do not include generated outputs, images, virtual
+environments, cache folders, or unrelated files
+
+import numpy as np
+
+
+def readable_time_ticks(time_values, max_labels=18):
+    if len(time_values) <= max_labels:
+        return time_values
+
+    step = int(np.ceil(len(time_values) / max_labels))
+    ticks = time_values[::step]
+
+    if ticks[-1] != time_values[-1]:
+        ticks.append(time_values[-1])
+
+    return ticks
+
+
+class DiscreteSignal:
+    """Finite discrete-time signal with integer indices."""
+
+    # Arguments: start_time and end_time are integers with start_time <= end_time.
+    # Output: None; initialize start_time, end_time, and zero-valued stored samples.
+    # Example: DiscreteSignal(-2, 3) represents samples for n = -2, -1, ..., 3.
+    def __init__(self, start_time, end_time):
+        self.start_time = start_time
+        self.end_time = end_time
+        self.values = [0.0]*(end_time-start_time+1)
+
+    # Arguments: none.
+    # Returns: int, the number of stored samples in this finite signal.
+    # Example: len(DiscreteSignal(-2, 3)) should be 6.
+    def __len__(self):
+        return self.end_time - self.start_time + 1
+
+    # Arguments: none.
+    # Returns: range of integer time indices covered by the signal.
+    # Example: DiscreteSignal(-1, 2).times() should cover -1, 0, 1, 2.
+    def times(self):
+        return range(self.start_time, self.end_time + 1)
+
+    # Arguments: t is an integer time index.
+    # Returns: float, the signal value at t; return 0.0 if t is outside the range.
+    # Example: if x[2] = 5, then x.get_value_at_time(2) should return 5.0.
+    def get_value_at_time(self, t):
+        if t < self.start_time or t > self.end_time:
+            return 0.0
+
+        return self.values[t - self.start_time]
+
+    # Arguments: t is an integer time index, value is the sample value to store.
+    # Output: None; update the stored sample at t, or raise an error if t is outside.
+    # Example: x.set_value_at_time(2, 5) makes x[2] equal to 5.
+    def set_value_at_time(self, t, value):
+        if t < self.start_time or t > self.end_time:
+                raise ValueError("Time out of range")
+        self.values[t - self.start_time] = value
+
+    # Arguments: k is an integer shift amount.
+    # Returns: DiscreteSignal, a copy with indices shifted so y[n] = x[n - k].
+    # Example: shifting a signal over 0..2 by 3 returns a signal over 3..5.
+    def shift(self, k):
+        shifted = DiscreteSignal(self.start_time + k, self.end_time + k)
+        shifted.values = list(self.values)
+        return shifted
+
+    # Arguments: other is another DiscreteSignal.
+    # Returns: DiscreteSignal over the combined range with sample-wise sums.
+    # Example: if x[0] = 2 and z[0] = 3, then x.add(z)[0] should be 5.
+    def add(self, other):
+        new_start = min(self.start_time,other.start_time)
+        new_end = max(self.end_time, other.end_time)
+        res = DiscreteSignal(new_start,new_end)
+        for t in res.times():
+            res.set_value_at_time(t, self.get_value_at_time(t) + other.get_value_at_time(t))
+        return res
+
+    # Arguments: scalar is a number used to multiply every stored sample.
+    # Returns: DiscreteSignal with the same time range and scaled sample values.
+    # Example: if x[1] = 4, then x.multiply(0.5)[1] should be 2.
+    def multiply(self, scalar):
+        res = DiscreteSignal(self.start_time,self.end_time)
+        for t in self.times():
+            res.set_value_at_time(t, self.get_value_at_time(t)*scalar)
+        return res
+
+    # Arguments: tolerance is the threshold below which values are treated as zero.
+    # Returns: list of (time_index, value) tuples for samples with abs(value) > tolerance.
+    # Example: values [1, 0, 3] starting at n = 0 should return [(0, 1), (2, 3)].
+    def nonzero_samples(self, tolerance=1e-12):
+        res = []
+        for t in self.times():
+            value = self.get_value_at_time(t)
+            if abs(value) > tolerance:
+                res.append((t,value))
+        return res
+        
+
+    def plot(self, title, save_path=None, ax=None):
+        import matplotlib.pyplot as plt
+
+        if ax is None:
+            _, ax = plt.subplots()
+
+        time_values = list(self.times())
+        markerline, stemlines, baseline = ax.stem(time_values, self.values)
+        markerline.set_markersize(6)
+        baseline.set_color("black")
+        baseline.set_linewidth(1)
+
+        ax.axhline(0, color="black", linewidth=0.8)
+        ax.set_title(title)
+        ax.set_xlabel("n")
+        ax.set_ylabel("value")
+        ax.grid(True, alpha=0.35)
+        ax.set_xticks(readable_time_ticks(time_values))
+        ax.tick_params(axis="x", labelsize=9)
+
+        if save_path is not None:
+            plt.savefig(save_path, bbox_inches="tight", dpi=150)
+
+        return ax
+
+
+class LTISystem:
+    """Discrete-time LTI system described by a finite impulse response."""
+
+    # Arguments: impulse_response is a DiscreteSignal representing h[n].
+    # Output: None; store the impulse response that defines this LTI system.
+    # Example: LTISystem(impulse_identity()) creates the identity system.
+    def __init__(self, impulse_response):
+        self.impulse_response = impulse_response
+
+    # Arguments: input_signal is a DiscreteSignal representing x[n].
+    # Returns: (start, end) tuple for the convolution output y[n].
+    # Example: x over 0..4 and h over 0..2 produce output range (0, 6).
+    def output_range(self, input_signal):
+        start = input_signal.start_time + self.impulse_response.start_time
+        end = input_signal.end_time + self.impulse_response.end_time
+        return (start,end)
+    # Arguments: input_signal is a DiscreteSignal representing x[n].
+    # Returns: list of (k, component_signal) for each nonzero input sample x[k].
+    # Example: x[2] = 3 contributes the component 3*h[n - 2].
+    def get_response_components(self, input_signal):
+        comps = []
+        for k, x_k in input_signal.nonzero_samples():
+            component = self.impulse_response.shift(k).multiply(x_k)
+            comps.append((k,component))
+
+    # Arguments: input_signal is a DiscreteSignal representing x[n].
+    # Returns: DiscreteSignal y[n], computed by adding all response components.
+    # Example: for the identity impulse, the output should match the input signal.
+    def output_by_superposition(self, input_signal):
+        start, end = self.output_range(input_signal)
+        res = DiscreteSignal(start, end)
+        for k, component in self.get_response_components(input_signal):
+            res = res.add(component)
+
+    # Arguments: input_signal is a DiscreteSignal and n is one output time index.
+    # Returns: list of (k, x_k, h_n_minus_k, product) nonzero contribution tuples.
+    # Example: a term may look like (2, 3.0, 0.5, 1.5) for x[2]h[n - 2].
+    def get_contributions_at_time(self, input_signal, n):
+        contributions = []
+        for k, x_k in input_signal.nonzero_samples():
+            h_val = self.impulse_response.get_value_at_time(n-k)
+            if abs(h_val) > 1e-12:
+                contributions.append((k,x_k,h_val, x_k*h_val))
+        return contributions
+    # Arguments: input_signal is a DiscreteSignal and n is one output time index.
+    # Returns: float, the convolution-sum value y[n].
+    # Example: output_at_time(x, 4) returns the scalar sample y[4].
+    def output_at_time(self, input_signal, n):
+        total = 0.0
+        for contribution in self.get_contributions_at_time(input_signal,n):
+            total += contribution[3]
+        return total
+
+    # Arguments: input_signal is a DiscreteSignal representing x[n].
+    # Returns: DiscreteSignal containing every output sample y[n].
+    # Example: system.output(x) returns the full convolution result x[n] * h[n].
+    def output(self, input_signal):
+        start, end = self.output_range(input_signal)
+        res = DiscreteSignal(start,end)
+        for n in res.times():
+            res.set_value_at_time(n, self.output_at_time(input_signal,n))
+        return res
+import os
+import argparse
+
+os.environ.setdefault("MPLCONFIGDIR", "/tmp/matplotlib-cache")
+
+import matplotlib
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
+import numpy as np
+
+from signal_lti import DiscreteSignal, LTISystem, readable_time_ticks
+
+
+# Arguments: start_time and end_time are integers; values is a list of samples.
+# Returns: DiscreteSignal with values placed from start_time through end_time.
+# Example: make_signal(2, 4, [7, 8, 9]) creates x[2] = 7, x[3] = 8, x[4] = 9.
+def make_signal(start_time, end_time, values):
+    signal = DiscreteSignal(start_time=start_time,end_time=end_time)
+    signal.values = values
+    return signal
+
+
+# Arguments: start_time/end_time are integers; samples maps time indices to values.
+# Returns: DiscreteSignal over the full range, with unspecified samples left as 0.
+# Example: signal_from_samples(0, 3, {0: 1, 2: 5}) creates values [1, 0, 5, 0].
+def signal_from_samples(start_time, end_time, samples):
+    signal = DiscreteSignal(start_time,end_time=end_time)
+    for t, val in samples.items:
+        signal.set_value_at_time(t, val)
+    return signal
+
+
+# Arguments: none.
+# Returns: DiscreteSignal for the identity impulse response h[0] = 1.
+# Example: impulse_identity() creates a signal over 0..0 with value 1.
+def impulse_identity():
+    i = DiscreteSignal(0,0)
+    i.set_value_at_time(0,1.0)
+
+
+# Arguments: length is a positive integer number of averaging samples.
+# Returns: DiscreteSignal h[n] = 1/length for n = 0, ..., length - 1.
+# Example: impulse_moving_average(3) returns h[0] = h[1] = h[2] = 1/3.
+def impulse_moving_average(length):
+    val = 1.0/length
+    values = [val] * length
+    out = make_signal(0, length-1, values)
+
+
+# Return the 3-point moving average: h[0] = h[1] = h[2] = 1/3.
+def impulse_moving_average_3():
+    return impulse_moving_average(3)
+
+
+# Return the 5-point moving average: h[0] through h[4] are all 1/5.
+def impulse_moving_average_5():
+    return impulse_moving_average(5)
+
+
+# Return the 7-point moving average: h[0] through h[6] are all 1/7.
+def impulse_moving_average_7():
+    return impulse_moving_average(7)
+
+
+# Arguments: none.
+# Returns: DiscreteSignal for weighted smoothing: h[0] = 0.5, h[1] = 0.3, h[2] = 0.2.
+# Example: this system computes 0.5x[n] + 0.3x[n - 1] + 0.2x[n - 2].
+def impulse_weighted_smoothing():
+    out = make_signal(0,2, [0.5,0.3,0.2])
+    return out
+
+
+# Arguments: none.
+# Returns: DiscreteSignal for the first-difference impulse h[0] = 1, h[1] = -1.
+# Example: this system computes y[n] = x[n] - x[n - 1].
+def impulse_first_difference():
+    return make_signal(0,1,[1.0,-1.0])
+
+
+BUILT_IN_IMPULSES = [
+    ("identity", "identity: h[0] = 1", impulse_identity),
+    ("moving_average_3", "3-point moving average", impulse_moving_average_3),
+    ("moving_average_5", "5-point moving average", impulse_moving_average_5),
+    ("moving_average_7", "7-point moving average", impulse_moving_average_7),
+    (
+        "weighted_smoothing",
+        "weighted smoothing: 0.5x[n] + 0.3x[n-1] + 0.2x[n-2]",
+        impulse_weighted_smoothing,
+    ),
+    ("first_difference", "first difference: x[n] - x[n-1]", impulse_first_difference),
+]
+
+
+def read_nonempty_lines(file_path):
+    with open(file_path, "r", encoding="utf-8") as file:
+        lines = []
+        for line in file:
+            stripped = line.strip()
+            if stripped and not stripped.startswith("#"):
+                lines.append(stripped)
+    return lines
+
+
+def parse_signal(lines, index):
+    start_time, end_time = map(int, lines[index].split())
+    values = list(map(float, lines[index + 1].split()))
+    return make_signal(start_time, end_time, values), index + 2
+
+
+def parse_impulse_response(lines, index):
+    mode = lines[index].strip().lower()
+    index += 1
+
+    if mode == "custom":
+        impulse_response, index = parse_signal(lines, index)
+        return [("convolution", "custom impulse response", impulse_response)], index
+
+    if mode in {"built-in", "builtin"}:
+        impulse_cases = []
+        for number, (slug, description, factory) in enumerate(BUILT_IN_IMPULSES, start=1):
+            prefix = f"builtin_{number}_{slug}"
+            impulse_cases.append((prefix, description, factory()))
+        return impulse_cases, index
+
+    raise ValueError("Impulse response mode must be custom or built-in")
+
+
+def read_problem_from_file(file_path):
+    lines = read_nonempty_lines(file_path)
+
+    input_signal, index = parse_signal(lines, 0)
+    impulse_cases, index = parse_impulse_response(lines, index)
+
+    if index != len(lines):
+        raise ValueError("Input file has extra lines after the impulse response section")
+
+    return input_signal, impulse_cases
+
+
+def print_signal(signal, name):
+    lines = [f"{name}:"]
+    for n in signal.times():
+        lines.append(f"  n = {n:4d}, value = {signal.get_value_at_time(n):10.4f}")
+    lines.append("")
+    return "\n".join(lines)
+
+
+# Arguments: first_signal and second_signal are DiscreteSignal objects.
+# Returns: float, the largest absolute difference over their combined time range.
+# Example: if the only mismatch is 0.25 at n = 2, return 0.25.
+def max_absolute_difference(first_signal, second_signal):
+    start = min(first_signal.start_time, second_signal.start_time)
+    end = max(first_signal.end_time, second_signal.end_time)
+
+    max_diff = 0.0
+    for t in range(start,end+1):
+        v1 = first_signal.get_value_at_time(t)
+        v2 = second_signal.get_value_at_time(t)
+
+        diff = abs(v1-v2)
+        if(diff > max_diff):
+            max_diff = diff
+
+    return float(max_diff)
+
+
+def normalized_grayscale_rgb(signal):
+    values = np.array(signal.values, dtype=float)
+    minimum = float(np.min(values))
+    maximum = float(np.max(values))
+
+    if np.isclose(minimum, maximum):
+        gray_values = np.full(values.shape, 128, dtype=np.uint8)
+    else:
+        gray_values = np.round(255 * (values - minimum) / (maximum - minimum))
+        gray_values = gray_values.astype(np.uint8)
+
+    return np.stack([gray_values, gray_values, gray_values], axis=-1)
+
+
+def plot_signals_as_stems(input_signal, impulse_response, output_signal, save_path):
+    fig, axes = plt.subplots(3, 1, figsize=(10, 8), constrained_layout=True)
+
+    input_signal.plot("Input signal x[n]", ax=axes[0])
+    impulse_response.plot("Impulse response h[n]", ax=axes[1])
+    output_signal.plot("Output signal y[n]", ax=axes[2])
+
+    fig.savefig(save_path, dpi=150)
+    plt.close(fig)
+
+
+def plot_color_blocks(signal, title, ax):
+    rgb_values = normalized_grayscale_rgb(signal)
+    image = rgb_values.reshape(1, len(rgb_values), 3)
+    time_values = list(signal.times())
+    tick_labels = readable_time_ticks(time_values)
+    tick_positions = [time_values.index(label) for label in tick_labels]
+
+    ax.imshow(image, aspect="auto", interpolation="nearest")
+    ax.set_title(title)
+    ax.set_yticks([])
+    ax.set_xlabel("n")
+    ax.set_xticks(tick_positions)
+    ax.set_xticklabels(tick_labels)
+    ax.tick_params(axis="x", labelsize=9)
+
+    for boundary in range(len(signal.values) + 1):
+        ax.axvline(boundary - 0.5, color="white", linewidth=0.8)
+
+
+def plot_signals_as_color_blocks(input_signal, output_signal, save_path):
+    fig, axes = plt.subplots(2, 1, figsize=(10, 3.6), constrained_layout=True)
+
+    plot_color_blocks(input_signal, "Input signal x[n]", axes[0])
+    plot_color_blocks(output_signal, "Output signal y[n]", axes[1])
+
+    fig.savefig(save_path, dpi=150)
+    plt.close(fig)
+
+
+def save_visualizations(input_signal, impulse_response, output_signal, out_dir, file_prefix):
+    plot_dir = os.path.join(out_dir, "plot")
+    color_dir = os.path.join(out_dir, "color")
+    os.makedirs(plot_dir, exist_ok=True)
+    os.makedirs(color_dir, exist_ok=True)
+
+    plot_path = os.path.join(plot_dir, f"{file_prefix}.png")
+    color_path = os.path.join(color_dir, f"{file_prefix}.png")
+
+    plot_signals_as_stems(input_signal, impulse_response, output_signal, plot_path)
+    plot_signals_as_color_blocks(
+        input_signal,
+        output_signal,
+        color_path,
+    )
+
+    return plot_path, color_path
+
+
+def clear_old_figures(out_dir):
+    for file_name in os.listdir(out_dir):
+        file_path = os.path.join(out_dir, file_name)
+        if os.path.isfile(file_path) and (
+            file_name.endswith(".png") or file_name in {"results.txt", "report.txt"}
+        ):
+            os.remove(file_path)
+
+    for folder_name in ("plot", "color"):
+        folder_path = os.path.join(out_dir, folder_name)
+        if not os.path.isdir(folder_path):
+            continue
+
+        for file_name in os.listdir(folder_path):
+            if file_name.endswith(".png"):
+                os.remove(os.path.join(folder_path, file_name))
+
+
+def build_report_section(
+    title,
+    input_signal,
+    impulse_response,
+    output_signal,
+    maximum_difference,
+    plot_path,
+    color_path,
+):
+    lines = [
+        title,
+        "=" * len(title),
+        print_signal(input_signal, "Input signal x[n]"),
+        print_signal(impulse_response, "Impulse response h[n]"),
+        print_signal(output_signal, "Output signal y[n]"),
+        "Verification",
+        f"Output range: [{output_signal.start_time}, {output_signal.end_time}]",
+        f"Maximum absolute difference between two methods: {maximum_difference:.12g}",
+        "",
+        f"Stem plot: {plot_path}",
+        f"Color plot: {color_path}",
+        "",
+    ]
+    return "\n".join(lines)
+
+
+def build_report(input_file, sections):
+    lines = [f"Input file: {input_file}", ""]
+    lines.extend(sections)
+    return "\n".join(lines)
+
+
+def write_report(report, out_dir):
+    report_path = os.path.join(out_dir, "report.txt")
+    with open(report_path, "w", encoding="utf-8") as file:
+        file.write(report)
+    return report_path
+
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(
+        description="Run finite discrete-time convolution from an input file."
+    )
+    parser.add_argument(
+        "input_file",
+        help="Path to the input file, for example inputs/1.txt",
+    )
+    parser.add_argument(
+        "--out-dir",
+        default="outputs",
+        help="Directory where the report and figures will be written.",
+    )
+    return parser.parse_args()
+
+
+def main():
+    args = parse_arguments()
+    os.makedirs(args.out_dir, exist_ok=True)
+    clear_old_figures(args.out_dir)
+
+    input_signal, impulse_cases = read_problem_from_file(args.input_file)
+
+    report_sections = []
+
+    for file_prefix, description, impulse_response in impulse_cases:
+        system = LTISystem(impulse_response)
+        y_superposition = system.output_by_superposition(input_signal)
+        y_convolution = system.output(input_signal)
+        maximum_difference = max_absolute_difference(y_superposition, y_convolution)
+
+        plot_path, color_path = save_visualizations(
+            input_signal,
+            impulse_response,
+            y_convolution,
+            args.out_dir,
+            file_prefix,
+        )
+        title = f"Impulse response: {description}"
+        report_sections.append(
+            build_report_section(
+                title,
+                input_signal,
+                impulse_response,
+                y_convolution,
+                maximum_difference,
+                plot_path,
+                color_path,
+            )
+        )
+
+    report = build_report(args.input_file, report_sections)
+    report_path = write_report(report, args.out_dir)
+
+    print(report)
+    print(f"Saved report: {report_path}")
+    print(f"Generated {len(impulse_cases)} impulse response output set(s).")
+
+
+if __name__ == "__main__":
+    main()
+
+July 2025 CSE 220 
+Online on Convolution 
+Subsections: C1, C2 
+Total Marks: 10 
+Total Time: 25 Minutes 
+January 27, 2026 
+In this online, you need to use your implementation of Signal and LTI to calculate the output for 
+a superposition of multiple signals. 
+Tasks 
+● Make a class named Supersignal that takes multiple Signal instances and keeps them in 
+an array. (Given in template) 
+● Implement a method in LTI class named output_super that takes a Supersignal object 
+and returns the corresponding output. 
+● Complete the given main function to test your implementation. 
+Submission 
+Rename your python file as 2205xxx.py and submit in the moodle.
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Todo: Define Signal class
+        
+class SuperSignal:
+    def __init__(self):
+        self.components = []
+
+    def add(self, signal: Signal, coefficient=1.0):
+        self.components.append((coefficient, signal))
+        
+# Todo: Define LTI class
+
+if __name__ == "__main__":
+    INF = 10
+
+    # Component signals
+    x1 = Signal(INF)
+    x1.set_value_at_time(0, 1)
+
+    x2 = Signal(INF)
+    x2.set_value_at_time(2, 1)
+
+    # Todo: Create SuperSignal: x(n) = 2*x1(n) - x2(n)
+
+    # Impulse response
+    h = Signal(INF)
+    h.set_value_at_time(0, 1)
+    h.set_value_at_time(1, 0.5)
+
+    system = LTI_System(h)
+
+    # Todo: Output using superposition
+
+July 2025 CSE 220 
+Online on Convolution 
+Subsections: B1, B2 
+Total Marks: 10 
+Total Time: 30 Minutes 
+January 28, 2026 
+In this online, you need to use your implementation of Signal and LTI to calculate the output for 
+a combination of LTI systems. Below is the pictorial representation of the combination: 
+Tasks 
+● Determine and plot the output of the combined system by separately applying h1, h2 and 
+h3. 
+● Calculate h_combined (impulse response of a LTI that is equivalent to the whole system 
+in the first figure), then determine and plot the output applying it. 
+● Verify that the both outputs you determined are the same signal. 
+Submission 
+Rename your python file as 2205xxx.py and submit in the moodle.
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Todo: Define Signal class
+
+# Todo: Define LTI class
+
+if __name__ == "__main__":
+    INF = 10
+
+    x = Signal(INF)
+    x.set_value_at_time(0, 1)
+    x.set_value_at_time(2, -1)
+    x.plot("Input x(n)")
+
+    h1 = Signal(INF)
+    h1.set_value_at_time(0, 1)
+
+    h2 = Signal(INF)
+    h2.set_value_at_time(1, 0.5)
+
+    h3 = Signal(INF)
+    h3.set_value_at_time(0, 1)
+    h3.set_value_at_time(1, 1)
+
+    sys1 = LTI_System(h1)
+    sys2 = LTI_System(h2)
+    sys3 = LTI_System(h3)
+    
+    # Todo: Determine output block by block
+
+    y_final_1.plot("Output via block-by-block system")
+
+    # Todo: Determine h_combined
+    
+    sys_combined = LTI_System(h_combined)
+
+    y_final_2 = sys_combined.output(x)
+    y_final_2.plot("Output via combined impulse response")
+
+    print("Outputs are equal:",
+          np.allclose(y_final_1.values, y_final_2.values))
+
+
+July 2025 CSE 220
+Online on Convolution
+Subsections: A1, A2
+Total Marks: 10 Total Time: 30 Minutes
+January 28, 2026
+In Offline 1, you computed the output of a discrete-time LTI system using the impulse
+response h[n]. In this assignment, you will be given the step response s[n] of an LTI system
+and must compute the output for any input x[n].
+Use the identities given below.
+h[n] = s[n] −s[n −1] (s[−1] = 0),
+∆x[n] = x[n] −x[n−1] (x[−1] = 0),
+y[n] = (∆x∗s)[n].
+Files provided
+step
+response.txt (contains s[n]), input
+Format
+signal.txt (contains x[n]).
+Line 1: nstart nend, Line 2: samples for n = nstart ...nend.
+Tasks
+1. Read s[n] from step
+response.txt and construct a Signal object.
+2. Compute and plot the recovered impulse response h[n] = s[n] − s[n −1].
+3. Read x[n] from input
+Signal operations.
+signal.txt. Compute∆x[n] = x[n]−x[n−1]usingonly your
+4. Compute the output using only the step response: ys[n] = (∆x ∗ s)[n]. You must reuse
+your Offline 1 LTI convolution code. Do not use numpy.convolve.
+5. Verify using the recovered impulse response: yh[n] = (x∗h)[n]. Show that both outputs
+ys[n] and yh[n] match closely.
+1
+Marks Distribution
+• Reading + plotting s[n]: 1
+• Determining and plotting h[n]: 3
+• Computing ∆x[n]: 2
+• Output using step response (ys): 3
+• Verification (showing outputs match): 1
+Submission:
+Submit {student
+id}.py to moodle. If you have used multiple Python files then you
+should zip all of them together and upload to moodle.
+"""
+CSE220 Online 2 (Step Response)
+
+Instructions:
+- Copy (or import) your completed Signal and LTI_System classes from Offline 1.
+- Implement the TODO functions below.
+- Do NOT use numpy.convolve / scipy.signal / any built-in convolution.
+"""
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+
+# Paste/Import your Offline 1 implementations here
+# from your_offline1_file import Signal, LTI_System
+
+class Signal:
+    def __init__(self, INF):
+        # TODO: paste your Offline 1 implementation
+        raise NotImplementedError
+
+    def set_value_at_time(self, t, value):
+        raise NotImplementedError
+
+    def shift(self, k):
+        raise NotImplementedError
+
+    def add(self, other):
+        raise NotImplementedError
+
+    def multiply(self, scalar):
+        raise NotImplementedError
+
+    def plot(self, title="Discrete Signal"):
+        raise NotImplementedError
+
+
+class LTI_System:
+    def __init__(self, impulse_response: Signal):
+        # TODO: paste your Offline 1 implementation
+        raise NotImplementedError
+
+    def linear_combination_of_impulses(self, input_signal: Signal):
+        raise NotImplementedError
+
+    def output(self, input_signal: Signal):
+        raise NotImplementedError
+
+
+def read_signal_from_file(filename: str, INF: int) -> Signal:
+    sig = Signal(INF)
+    with open(filename, "r", encoding="utf-8") as f:
+        nstart, nend = map(int, f.readline().strip().split())
+        vals = list(map(float, f.readline().strip().split()))
+    assert len(vals) == (nend - nstart + 1)
+    for i, v in enumerate(vals):
+        sig.set_value_at_time(nstart + i, v)
+    return sig
+
+
+def first_difference(sig: Signal) -> Signal:
+    """
+    Returns Δsig[n] = sig[n] - sig[n-1] (assume outside range is 0).
+    Must use Signal.shift/add/multiply.
+    """
+    # TODO
+    raise NotImplementedError
+
+
+def impulse_from_step_response(step_response: Signal) -> Signal:
+    """
+    Given s[n], compute h[n] = s[n] - s[n-1] (with s[-1]=0).
+    Must use only Signal operations.
+    """
+    # TODO
+    raise NotImplementedError
+
+
+def output_using_step_response(x: Signal, step_response: Signal) -> Signal:
+    """
+    Compute y[n] using ONLY step response:
+        y = (Δx * s)
+    You must reuse your Offline 1 LTI_System machinery (linear combination of impulses).
+    """
+    # TODO
+    raise NotImplementedError
+
+
+# Main (demo workflow)
+if __name__ == "__main__":
+    # Choose INF large enough for your signals
+    INF = 50
+
+    # ---- Load provided files ----
+    s = read_signal_from_file("step_response.txt", INF)
+    x = read_signal_from_file("input_signal.txt", INF)
+
+    # ---- Part 1: recover impulse response ----
+    h = None
+
+    s.plot("Step Response s[n]")
+    h.plot("Recovered Impulse Response h[n] = s[n] - s[n-1]")
+
+    # ---- Part 2: output using only step response ----
+    dx = None
+    y_s = None
+
+    x.plot("Input x[n]")
+    dx.plot("First Difference Δx[n]")
+    y_s.plot("Output y_s[n] computed via step response")
+
+    # ---- Part 3: verify with impulse-response method ----
+    sys_h = None
+    y_h = None
+    y_h.plot("Output y_h[n] computed via impulse response")
+
+    # Check if outputs match closely
+    if np.allclose(y_s.values, y_h.values, atol=1e-6):
+        print("Outputs match closely!")
+    else:
+        print("Outputs differ!")
+
+January 2024 CSE 220
+Online on the Convolution of Linear Time-Invariant Systems
+Subsections: A1, A2
+October 29, 2024
+Suppose you have the stock market prices of MNP company for the last few days. For
+trend analysis, it is often convenient to work with the moving averages of the stock prices.
+This process is also called smoothing. In stock price analysis, the later days usually have
+more influence on the future prices. In exponential smoothing, recent data points are given
+exponentially greater weights than older points. This can be achieved by convolving the
+data with an impulse response function that decreases exponentially. We can consider only
+the prices of the last n days. Here n is called the window size. Since the exponentially
+decaying function rapidly approaches 0, we can neglect the other values or consider as 0.
+We can define this function as:
+h[k] = α×(1−α)k
+(1)
+We can control the amount of weight we want to assign on the most recent values by
+controlling the parameter α, where 0 < α < 1. To be more specific, we put exactly the
+weight α on the most recent value, then the weight α ×(1−α) on the value before that and
+so on. Please refer to the sample I/O for a better understanding.
+Your task in this assignment is to perform Exponential Smoothing on stock price data
+for a given window size n and a given value of α. You must make use of convolution to
+solve this problem. Using Python library functions to determine any of the two averages
+is strictly prohibited. You should use the classes and functions implemented during your
+Offline 1 assignment.
+I/O Format
+You shall need to take stock market prices, the window size and the parameter alpha as
+inputs and print the results found after performing exponential smoothing on the stock
+prices.
+In the first line, take stock prices as input in the form of m comma separated integers.
+Then in the next line, you should take the moving window size n as the input. Finally take
+the parameter α as the input.
+As for the output, you should print out total m-n+1 as the outputs. For example, if there
+are 10 stock prices given and the window size is 3,thenyouneedtoprintouttotal10−3+1 =
+8 values as the output. Please refer to the sample I/O for a better understanding.
+A template Python file already containing these codes has been begiven. Youneednot
+implement I/O.
+1
+Sample I/O
+Case 1
+Input
+Stock Prices: 10,11,12,9,10,13,15,16,17,18
+Window size: 3
+Alpha: 0.8
+Output
+11.68,9.47,9.82,12.29,14.40,15.62,16.64,17.63
+Explanation
+Herewehave10stockpricesandthewindowsizeis3. Soweneedtodetermine10−3+1 = 8
+values. We determine the first output 11.68 by considering the first 3 inputs 10, 11 and 12.
+Since 12 is the most recent value, we put exactly the weight α = 0.8 on it. Then, we put
+the weight α × (1 − α) = 0.8 ∗ 0.2 = 0.16 on 11. The remaining value 10 has the weight
+α×(1−α)2 =0.8∗0.22 = 0.032. By adding these 3 values, we get the first output 11.68.
+0.8 ∗ 0.20 ∗ 12 +0.8 ∗0.21 ∗ 11+0.8∗0.22 ∗10 = 11.68
+Similarly, to determine the second output 9.47, we need to focus on the next 3 prices 11,
+12 and 9.
+0.8 ∗ 0.20 ∗ 9 +0.8 ∗0.21 ∗ 12+0.8∗0.22 ∗11 = 9.472
+Hints
+• TrytorelatethefollowingformulaoftheConvolutionSumtotheformulaofthemoving
+average. What should be x[k] and how is it related to the stock prices?
+∞
+y[n] =
+k=−∞
+x[k] × h[n −k]
+• Theimpulse response function h[k] is an exponentially decaying function which can be
+defined as (0 < α < 1):
+h[k] = α×(1−α)k
+You only need to define h[k] where k = 0,1,...,n − 1 where n is the window size. You
+can assume h[k] = 0 everywhere else.
+Marks Distribution
+• Taking the input in the given format: 1 Mark
+• Determining the proper input signal: 2 Marks
+2
+• Determining the proper impulse response: 3 Marks
+• Determining the results of Exponential Smoothing correctly: 3 Marks
+• Printing the output in the given format to the console: 1 Mark
+
+import numpy as np
+
+# Stock Market Prices as a Python List
+# price_list = list(map(int, input("Stock Prices: ").split()))
+# n = int(input("Window size: "))
+# alpha = float(input("Alpha: "))
+
+# You may use the following input for testing purpose
+price_list = [10,11,12,9,10,13,15,16,17,18]
+n = 3
+alpha = 0.8
+
+# Determine the values after performing Exponential Smoothing
+# The length of exsm should be = len(price_list) - n + 1
+exsm = []
+
+print("Exponential Smoothing: " + ", ".join(f"{num:.2f}" for num in exsm))
+# Output should be: 11.68, 9.47, 9.82, 12.29, 14.40, 15.62, 16.64, 17.63January 2024 CSE 220
+Online on the Convolution of Linear Time-Invariant Systems
+Subsections: B1, B2
+October 27, 2024
+Suppose you have the stock market prices of XYZ company for the last few days. For
+trend analysis, it is often convenient to work with the moving averages of the stock prices.
+There are many ways to do this. One way is to simply take the average of the last n days
+of stock prices. Here n is called the window size. This average is called the Simple or
+Unweighted Moving Average. However, this method gives the same weight to each of the
+last n days. In stock price analysis, the later days usually have more influence on the future
+prices.
+One way to solve this problem is to put more weight on the last day, a bit less weight on
+the day before that and so on. This method is called the Weighted Moving Average and it
+puts different weights on each of the n days. For this assignment, please set the weight of
+the last day to n, the weight of the day before that to n−1, and so on. Please remember that
+you need to normalize these weights so that their sum equals to 1. Take a look at the sample
+I/O for a better understanding.
+Your task in this assignment is to determine the Simple or Unweighted Moving Average
+and the Weighted Moving Average of stock prices for the window size n. You must make
+use of convolution to solve both problems. Using Python library functions to determine
+any of the two averages is strictly prohibited. You should use the classes and functions
+implemented during your Offline 1 assignment.
+I/O Format
+You shall need to take stock market prices and the window size as inputs and print the two
+moving averages mentioned above as outputs.
+In the first line, take the stock prices as input in the form of space separated integers.
+Then in the next line, you should take the moving window size n as the input.
+As for the output, you should print out the moving average as the outputs. Please refer
+to the sample I/O for a better understanding.
+A template Python file already containing these codes has been be given. You need not
+implement I/O.
+Sample I/O
+Case 1
+Input
+Stock Prices: 1, 2, 3, 4, 5, 6, 7, 8
+1
+Window size: 4
+Output
+Unweighted Moving Average: 2.50, 3.50, 4.50, 5.50, 6.50
+Weighted Moving Average: 3.00, 4.00, 5.00, 6.00, 7.00
+Explanation
+Stock Prices
+1
+2
+3
+4
+5
+6
+7
+8
+0.25 0.25 0.25 0.25
+Unweighted
+Moving
+Averages
+= (1+2+3+4)*0.25 = 2.5
+Unweighted
+Average
+Window
+0.25 0.25 0.25 0.25
+= (2+3+4+5)*0.25 = 3.5
+0.25 0.25 0.25 0.25
+= (3+4+5+6)*0.25 = 4.5
+0.25 0.25 0.25 0.25
+= (4+5+6+7)*0.25 = 5.5
+0.25 0.25 0.25 0.25 =(5+6+7+8)*0.25 = 6.5
+Stock Prices
+1
+2
+3
+4
+5
+6
+7
+8
+Weighted
+Moving
+Averages
+0.1 0.2 0.3 0.4
+= 1*0.1 + 2*0.2 + 3*0.3 + 4*0.4 = 3.0
+Weighted
+Average
+Window
+0.1 0.2 0.3 0.4
+= 2*0.1 + 3*0.2 + 4*0.3 + 5*0.4 = 4.0
+0.1 0.2 0.3 0.4
+= 3*0.1 + 4*0.2 + 5*0.3 + 6*0.4 = 5.0
+0.1 0.2 0.3 0.4
+= 4*0.1 + 5*0.2 + 6*0.3 + 7*0.4 = 6.0
+0.1 0.2 0.3 0.4 = 5*0.1 + 6*0.2 + 7*0.3 + 8*0.4 = 7.0
+Case 2
+Input
+Stock Prices: 5,-2, 3, 1, 0,-6, 4,-2, 1
+Window Size: 3
+Output
+Unweighted Moving Average: 2.00, 0.67, 1.33,-1.67,-0.67,-1.33, 1.00
+Weighted Moving Average: 1.67, 1.17, 0.83,-2.83, 0.00,-0.67, 0.50
+Hints
+• TrytorelatethefollowingformulaoftheConvolutionSumtotheformulaofthemoving
+average. What should be x[k] and how is it related to the stock prices? Note that x[k]
+is the same for both cases of the moving averages. What should you choose as the
+impulse response signal h[n − k]? How is it related to the moving average windows?
+Take a look at the two tables above.
+y[n] =
+∞
+k=−∞
+x[k] × h[n −k]
+2
+Marks Distribution
+• Taking the input in the given format: 1 Mark
+• Determining an input signal for determining the both Moving Averages using convo
+lution: 1 Mark
+• Determining an impulse response for determining the Unweighted Moving Average
+using convolution: 1 Mark
+• Determining the Unweighted Moving Average correctly: 2 Marks
+• Determining an impulse response for determining the Weighted Moving Average us
+ing convolution: 2 Marks
+• Determining the Weighted Moving Average correctly: 2 Marks
+• Printing the output in the given format to the console: 1 Mark
+import numpy as np
+
+# Stock Market Prices as a Python List
+price_list = list(map(int, input("Stock Prices: ").split()))
+n = int(input("Window size: "))
+
+# price_list = [1, 2, 3, 4, 5, 6, 7, 8]
+# n = 4
+
+# Please determine uma and wma.
+
+# Unweighted Moving Averages as a Python list
+uma = []
+
+# Weighted Moving Averages as a Python list
+wma = []
+
+# Print the two moving averages
+print("Unweighted Moving Averages: " + ", ".join(f"{num:.2f}" for num in uma))
+print("Weighted Moving Averages:   " + ", ".join(f"{num:.2f}" for num in wma))
+January 2024 CSE 220
+Online on the Convolution of Linear Time-Invariant Systems
+Subsections: C1, C2
+October 26, 2024
+Polynomials are algebraic expressions that consist of variables and coefficients. An exam
+ple of a polynomial with one variable is x2 − 3x − 1. The degree of a polynomial is defined
+as the highest exponent of a variable within a polynomial. For example: 5x4 + x3 − 2x2 + 1
+has degree 4. We can multiply two polynomials with each other. For example: (3x2−2x+1)
+×(2x3 −3x+1) = 6x5−4x4−7x3+9x2−5x+1.
+Your task in this assignment is to implement the polynomial multiplication using discrete
+time convolution operation. You should make use of the Python classes and functions im
+plemented in your Offline assignment.
+I/O Format
+You shall need to take two polynomials as inputs and print the result of their multiplication
+as the output. You can assume that the polynomials have only one variable x.
+In the first line, take the degree d1 of the first polynomial as input. Then in the next line,
+take (d1 + 1) number of space separated integers as input. They are the coefficients of the
+decreasing exponents of x i.e. the coefficients of xd1, xd1−1, xd1−2, ... , x, 1, in this order.
+Similarly, take the second polynomial as input.
+As for the output, you should multiply these two polynomials and print out the degree,
+followed by the coefficients in the next line. Please refer to the sample I/O for a better
+understanding.
+Sample I/O
+Case 1
+Input
+Degree of the first Polynomial: 2
+Coefficients: 3-2 1
+Degree of the second Polynomial: 3
+Coefficients: 2 0-3 1
+Output
+Degree of the Polynomial: 5
+Coefficients: 6-4-7 9-5 1
+1
+Explanation
+The first input denotes the polynomial 3x2 − 2x + 1 (degree=2) where the coefficients of
+x2, x and x0 are consecutively 3,-2 and 1. Similarly the second polynomial is 2x3 − 3x + 1
+(degree=3). Their multiplication results in the polynomial 6x5 − 4x4 − 7x3 + 9x2 − 5x + 1
+(degree=5).
+Case 2
+Input
+Degree of the first Polynomial: 2
+Coefficients: 1 2-1
+Degree of the second Polynomial: 4
+Coefficients: 2-1 0 3 2
+Output
+Degree of the Polynomial: 6
+Coefficients: 2 3-4 4 8 1-2
+Case 3
+Input
+Degree of the first Polynomial: 4
+Coefficients: 3-2 0 1-5
+Degree of the second Polynomial: 3
+Coefficients: 1 2-3-1
+Output
+Degree of the Polynomial: 7
+Coefficients: 3 4-13 4-1-13 14 5
+Hints
+• Trytorelate the following formula of the Convolution Sum to the polynomial multipli
+cation. What should be x[k]? What should you choose as the impulse response signal
+h[n −k]?
+∞
+y[n] =
+k=−∞
+x[k] × h[n −k]
+• ThefollowingtableshowstheprocessofmultiplyingPolynomialA=(2x3−3x+1)with
+Polynomial B =(3x2−2x+1). Theresultis the Polynomial 6x5−4x4−7x3+9x2−5x+1.
+Pay attention to how the coefficients of x5, x4, ... , x, 1 are determined.
+2
+Polynomial A
+2
+0-3 1
+Coefficients
+1-2 3
+1*0+(-2)*0+3*2 = 6
+Coefficients
+of
+Polynomial B
+1-2 3
+1-2 3
+1*0+(-2)*2+3*0 =-4
+1*2+(-2)*0+3*(-3) =-7
+1-2 3
+1*0+(-2)*(-3)+3*1 = 9
+1-2 3
+1*(-3)+(-2)*1+3*0 =-5
+1
+Marks Distribution
+• Taking the input in the given format: 1 Mark-2 3 1*1+(-2)*0+3*0=1
+• Defining an appropriate impulse response signal of the LTI system: 2 Marks
+• Defining an appropriate input signal to the LTI system: 2 Marks
+• Generating the multiplication of the two polynomials accurately using DT convolution:
+4 Marks
+• Printing the output in the given format to the console: 1 Mark
+# Input for first polynomial
+d1 = int(input("Degree of the first polynomial: "))
+poly1 = list(map(int, input("Coefficients: ").split()))
+
+
+# Input for second polynomial
+d2 = int(input("Degree of the second polynomial: "))
+poly2 = list(map(int, input("Coefficients: ").split()))
+
+
+# Multiply the polynomials using Discrete-Time Convolution
+
+
+# Print the result
